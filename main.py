@@ -179,7 +179,10 @@ def median_path(a, b, resid, last_logit, x_last, x_target, walk, sigma_floor=0.0
 
     Line read at the target, blended 25% toward the same slope anchored
     at the last read, total logit move capped at +/-LOGIT_MOVE_LIMIT.
+    A target before the last read cannot extrapolate backwards: the
+    target log-clock is clamped to at least the last read's log-clock.
     """
+    x_target = max(x_target, x_last)
     line_at_target = a + b * x_target
     anchored = last_logit + b * (x_target - x_last)
     median_logit = (1.0 - ANCHOR_WEIGHT) * line_at_target + ANCHOR_WEIGHT * anchored
@@ -297,7 +300,7 @@ def forecast_case(case, case_id=None):
 
     case_at = parse_time(case["at"])
     target = parse_time(case["target"])
-    horizon_days = case["horizon_minutes"] / 1440.0
+    horizon_days = max(0, case["horizon_minutes"]) / 1440.0
     walk = WALK_SIGMA * math.sqrt(horizon_days)
     x_target = log_clock(target)
 
